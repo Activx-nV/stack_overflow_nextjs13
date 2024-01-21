@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { QuestionsSchema } from '@/lib/validations';
 import Image from 'next/image';
 import { Badge } from '../ui/badge';
+import { createQuestion } from '@/lib/actions/question.action';
 
 const type: any = 'create';
 
@@ -37,15 +38,6 @@ const Question = () => {
   });
 
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof QuestionsSchema>) {
-    setIsSubmitting(true);
-
-    try {
-      // API
-    } catch (error) {
-      setIsSubmitting(false);
-    }
-  }
 
   const handleInputKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
@@ -127,6 +119,8 @@ const Question = () => {
                     // @ts-ignore
                     editorRef.current = editor;
                   }}
+                  onBlur={field.onBlur}
+                  onEditorChange={(content) => field.onChange(content)}
                   initialValue=""
                   init={{
                     height: 350,
@@ -189,7 +183,7 @@ const Question = () => {
                           className="subtle-medium background-light800_dark300 text-light400_light500 flex items-center justify-center gap-2 rounded-md border-none px-4 py-2 capitalize"
                           onClick={() => handleTagRemove(tag, field)}
                         >
-                          {'test'}
+                          {tag}
                           <Image
                             src="/assets/icons/close.svg"
                             alt="Close icon"
