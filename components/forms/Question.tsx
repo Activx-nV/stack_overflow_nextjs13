@@ -62,6 +62,8 @@ const Question = ({ mongoUserId }: Props) => {
       // navigate to home page
       router.push('/');
     } catch (error) {
+      console.log(error);
+      throw error;
     } finally {
       setIsSubmitting(false);
     }

@@ -28,7 +28,6 @@ export async function createQuestion(params: CreateQuestionParams) {
     connectToDatabase();
 
     const { title, content, tags, author, path } = params;
-    console.log('paramz', params);
 
     // Create the question
     const question = await Question.create({
@@ -45,7 +44,7 @@ export async function createQuestion(params: CreateQuestionParams) {
     for (const tag of tags) {
       const existingTag = await Tag.findOneAndUpdate(
         { name: { $regex: new RegExp(`^${tag}$`, 'i') } },
-        { $setOnInsert: { name: tag }, $push: { question: question._id } },
+        { $setOnInsert: { name: tag }, $push: { questions: question._id } },
         { upsert: true, new: true }
       );
 
@@ -61,5 +60,8 @@ export async function createQuestion(params: CreateQuestionParams) {
     // Increment author's reputation by +5 for creating a question
 
     revalidatePath(path);
-  } catch (error) {}
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
 }
