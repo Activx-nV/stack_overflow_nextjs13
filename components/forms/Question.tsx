@@ -1,12 +1,9 @@
 'use client';
-
 import React, { useRef, useState } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-
-import { Button } from '@/components/ui/button';
+import { useForm } from 'react-hook-form';
 import {
   Form,
   FormControl,
@@ -17,17 +14,26 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Button } from '../ui/button';
 import { QuestionsSchema } from '@/lib/validations';
-import Image from 'next/image';
 import { Badge } from '../ui/badge';
+import Image from 'next/image';
 import { createQuestion } from '@/lib/actions/question.action';
+import { useRouter, usePathname } from 'next/navigation';
 
 const type: any = 'create';
 
-const Question = () => {
+interface Props {
+  mongoUserId: string;
+}
+
+const Question = ({ mongoUserId }: Props) => {
   const editorRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
+  // 1. Define your form.
   const form = useForm<z.infer<typeof QuestionsSchema>>({
     resolver: zodResolver(QuestionsSchema),
     defaultValues: {
@@ -38,6 +44,30 @@ const Question = () => {
   });
 
   // 2. Define a submit handler.
+  async function onSubmit(values: z.infer<typeof QuestionsSchema>) {
+    setIsSubmitting(true);
+
+    try {
+      // make an async call to your API -> create a question
+      // contain all form data
+
+      await createQuestion({
+        title: values.title,
+        content: values.explanation,
+        tags: values.tags,
+        author: JSON.parse(mongoUserId),
+        path: pathname,
+      });
+
+      // navigate to home page
+      router.push('/');
+    } catch (error) {
+      console.log(error);
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   const handleInputKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>,
@@ -95,14 +125,13 @@ const Question = () => {
                 />
               </FormControl>
               <FormDescription className="body-regular mt-2.5 text-light-500">
-                Be specific and image you&apos;re asking a question to another
-                person
+                Be specific and imagine you&apos;re asking a question to another
+                person.
               </FormDescription>
               <FormMessage className="text-red-500" />
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="explanation"
@@ -144,7 +173,7 @@ const Question = () => {
                     ],
                     toolbar:
                       'undo redo | ' +
-                      'codesample | bold italic forecolor | alignleft aligncenter ' +
+                      'codesample | bold italic forecolor | alignleft aligncenter |' +
                       'alignright alignjustify | bullist numlist',
                     content_style: 'body { font-family:Inter; font-size:16px }',
                   }}
@@ -158,7 +187,6 @@ const Question = () => {
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="tags"
