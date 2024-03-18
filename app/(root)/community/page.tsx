@@ -3,7 +3,6 @@ import Filter from '@/components/shared/Filter';
 import LocalSearchbar from '@/components/shared/search/LocalSearchbar';
 import { UserFilters } from '@/constants/filters';
 import { getAllUsers } from '@/lib/actions/user.action';
-import { User } from 'lucide-react';
 import Link from 'next/link';
 
 const Page = async () => {
