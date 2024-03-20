@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Form,
@@ -6,29 +6,61 @@ import {
   FormField,
   FormItem,
   FormMessage,
-} from '../ui/form';
-import { useForm } from 'react-hook-form';
-import { AnswerSchema } from '@/lib/validations';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Editor } from '@tinymce/tinymce-react';
-import { useRef, useState } from 'react';
-import { useTheme } from '@/context/ThemeProvider';
-import { Button } from '../ui/button';
-import Image from 'next/image';
+} from "../ui/form";
+import { useForm } from "react-hook-form";
+import { AnswerSchema } from "@/lib/validations";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Editor } from "@tinymce/tinymce-react";
+import { useRef, useState } from "react";
+import { useTheme } from "@/context/ThemeProvider";
+import { Button } from "../ui/button";
+import Image from "next/image";
+import { createAnswer } from "@/lib/actions/answer.action";
+import { usePathname } from "next/navigation";
 
-const Answer = () => {
+interface Props {
+  question: string;
+  questionId: string;
+  authorId: string;
+}
+
+const Answer = ({ question, questionId, authorId }: Props) => {
+  const pathname = usePathname();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { mode } = useTheme();
   const editorRef = useRef(null);
   const form = useForm<z.infer<typeof AnswerSchema>>({
     resolver: zodResolver(AnswerSchema),
     defaultValues: {
-      answer: '',
+      answer: "",
     },
   });
 
-  const handleCreateAnswer = () => {};
+  const handleCreateAnswer = async (values: z.infer<typeof AnswerSchema>) => {
+    setIsSubmitting(true);
+
+    try {
+      await createAnswer({
+        content: values.answer,
+        author: JSON.parse(authorId),
+        question: JSON.parse(questionId),
+        path: pathname,
+      });
+
+      form.reset();
+
+      if (editorRef.current) {
+        const editor = editorRef.current as any;
+
+        editor.setContent("");
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div>
@@ -75,30 +107,30 @@ const Answer = () => {
                       height: 350,
                       menubar: false,
                       plugins: [
-                        'advlist',
-                        'autolink',
-                        'lists',
-                        'link',
-                        'image',
-                        'charmap',
-                        'preview',
-                        'anchor',
-                        'searchreplace',
-                        'visualblocks',
-                        'codesample',
-                        'fullscreen',
-                        'insertdatetime',
-                        'media',
-                        'table',
+                        "advlist",
+                        "autolink",
+                        "lists",
+                        "link",
+                        "image",
+                        "charmap",
+                        "preview",
+                        "anchor",
+                        "searchreplace",
+                        "visualblocks",
+                        "codesample",
+                        "fullscreen",
+                        "insertdatetime",
+                        "media",
+                        "table",
                       ],
                       toolbar:
-                        'undo redo | ' +
-                        'codesample | bold italic forecolor | alignleft aligncenter |' +
-                        'alignright alignjustify | bullist numlist',
+                        "undo redo | " +
+                        "codesample | bold italic forecolor | alignleft aligncenter |" +
+                        "alignright alignjustify | bullist numlist",
                       content_style:
-                        'body { font-family:Inter; font-size:16px }',
-                      skin: mode === 'dark' ? 'oxide-dark' : 'oxide',
-                      content_css: mode === 'dark' ? 'dark' : 'light',
+                        "body { font-family:Inter; font-size:16px }",
+                      skin: mode === "dark" ? "oxide-dark" : "oxide",
+                      content_css: mode === "dark" ? "dark" : "light",
                     }}
                   />
                 </FormControl>
@@ -109,11 +141,11 @@ const Answer = () => {
 
           <div className="flex justify-end">
             <Button
-              type="button"
+              type="submit"
               className="primary-gradient w-fit text-white"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Submitting...' : 'Submit'}
+              {isSubmitting ? "Submitting..." : "Submit"}
             </Button>
           </div>
         </form>
