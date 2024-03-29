@@ -1,14 +1,14 @@
-"use server";
+'use server';
 
-import Question from "@/database/question.model";
-import { connectToDatabase } from "../mongoose";
+import Answer from '@/database/answer.model';
+import { connectToDatabase } from '../mongoose';
 import {
   AnswerVoteParams,
   CreateAnswerParams,
   GetAnswersParams,
-} from "./shared.types";
-import Answer from "@/database/answer.model";
-import { revalidatePath } from "next/cache";
+} from './shared.types';
+import Question from '@/database/question.model';
+import { revalidatePath } from 'next/cache';
 
 export async function createAnswer(params: CreateAnswerParams) {
   try {
@@ -39,12 +39,13 @@ export async function getAnswers(params: GetAnswersParams) {
     const { questionId } = params;
 
     const answers = await Answer.find({ question: questionId })
-      .populate("author", "_id clerkId name picture")
+      .populate('author', '_id clerkId name picture')
       .sort({ createdAt: -1 });
 
     return { answers };
   } catch (error) {
     console.log(error);
+    throw error;
   }
 }
 
@@ -53,6 +54,7 @@ export async function upvoteAnswer(params: AnswerVoteParams) {
     connectToDatabase();
 
     const { answerId, userId, hasupVoted, hasdownVoted, path } = params;
+
     let updateQuery = {};
 
     if (hasupVoted) {
@@ -70,11 +72,13 @@ export async function upvoteAnswer(params: AnswerVoteParams) {
       new: true,
     });
 
-    revalidatePath(path);
-
     if (!answer) {
-      throw new Error("Answer not found");
+      throw new Error('Answer not found');
     }
+
+    // Increment author's reputation
+
+    revalidatePath(path);
   } catch (error) {
     console.log(error);
     throw error;
@@ -86,10 +90,11 @@ export async function downvoteAnswer(params: AnswerVoteParams) {
     connectToDatabase();
 
     const { answerId, userId, hasupVoted, hasdownVoted, path } = params;
+
     let updateQuery = {};
 
     if (hasdownVoted) {
-      updateQuery = { $pull: { upvotes: userId } };
+      updateQuery = { $pull: { downvote: userId } };
     } else if (hasupVoted) {
       updateQuery = {
         $pull: { upvotes: userId },
@@ -103,11 +108,13 @@ export async function downvoteAnswer(params: AnswerVoteParams) {
       new: true,
     });
 
-    revalidatePath(path);
-
     if (!answer) {
-      throw new Error("Answer not found");
+      throw new Error('Answer not found');
     }
+
+    // Increment author's reputation
+
+    revalidatePath(path);
   } catch (error) {
     console.log(error);
     throw error;
