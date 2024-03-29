@@ -8,8 +8,7 @@ import {
 import { toggleSaveQuestion } from '@/lib/actions/user.action';
 import { formatAndDivideNumber } from '@/lib/utils';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface Props {
   type: string;
