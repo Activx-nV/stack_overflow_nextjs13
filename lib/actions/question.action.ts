@@ -1,8 +1,8 @@
-'use server';
+"use server";
 
-import Question from '@/database/question.model';
-import Tag from '@/database/tag.model';
-import { connectToDatabase } from '../mongoose';
+import Question from "@/database/question.model";
+import Tag from "@/database/tag.model";
+import { connectToDatabase } from "../mongoose";
 import {
   CreateQuestionParams,
   DeleteQuestionParams,
@@ -10,40 +10,42 @@ import {
   GetQuestionByIdParams,
   GetQuestionsParams,
   QuestionVoteParams,
-} from './shared.types';
-import User from '@/database/user.model';
-import { revalidatePath } from 'next/cache';
-import Answer from '@/database/answer.model';
-import Interaction from '@/database/interaction.model';
-import { FilterQuery } from 'mongoose';
+} from "./shared.types";
+import User from "@/database/user.model";
+import { revalidatePath } from "next/cache";
+import Answer from "@/database/answer.model";
+import Interaction from "@/database/interaction.model";
+import { FilterQuery } from "mongoose";
 
 export async function getQuestions(params: GetQuestionsParams) {
   try {
     connectToDatabase();
 
-    const { searchQuery, filter } = params;
+    const { searchQuery, filter, page = 1, pageSize = 20 } = params;
+
+    const skipAmount = (page - 1) * pageSize;
 
     const query: FilterQuery<typeof Question> = {};
 
     if (searchQuery) {
       query.$or = [
-        { title: { $regex: new RegExp(searchQuery, 'i') } },
-        { content: { $regex: new RegExp(searchQuery, 'i') } },
+        { title: { $regex: new RegExp(searchQuery, "i") } },
+        { content: { $regex: new RegExp(searchQuery, "i") } },
       ];
     }
 
     let sortOptions = {};
 
     switch (filter) {
-      case 'newest':
+      case "newest":
         sortOptions = { createdAt: -1 };
         break;
 
-      case 'frequent':
+      case "frequent":
         sortOptions = { views: -1 };
         break;
 
-      case 'unanswered':
+      case "unanswered":
         query.answers = { $size: 0 };
         break;
 
@@ -52,11 +54,17 @@ export async function getQuestions(params: GetQuestionsParams) {
     }
 
     const questions = await Question.find(query)
-      .populate({ path: 'tags', model: Tag })
-      .populate({ path: 'author', model: User })
+      .populate({ path: "tags", model: Tag })
+      .populate({ path: "author", model: User })
+      .skip(skipAmount)
+      .limit(pageSize)
       .sort(sortOptions);
 
-    return { questions };
+    const totalQuestions = await Question.countDocuments(query);
+
+    const isNext = totalQuestions > skipAmount + questions.length;
+
+    return { questions, isNext };
   } catch (error) {
     console.log(error);
     throw error;
@@ -81,7 +89,7 @@ export async function createQuestion(params: CreateQuestionParams) {
     // Create the tags or get them if they already exist
     for (const tag of tags) {
       const existingTag = await Tag.findOneAndUpdate(
-        { name: { $regex: new RegExp(`^${tag}$`, 'i') } },
+        { name: { $regex: new RegExp(`^${tag}$`, "i") } },
         { $setOnInsert: { name: tag }, $push: { questions: question._id } },
         { upsert: true, new: true }
       );
@@ -112,14 +120,14 @@ export async function getQuestionById(params: GetQuestionByIdParams) {
 
     const question = await Question.findById(questionId)
       .populate({
-        path: 'tags',
+        path: "tags",
         model: Tag,
-        select: '_id name',
+        select: "_id name",
       })
       .populate({
-        path: 'author',
+        path: "author",
         model: User,
-        select: '_id clerkId name picture',
+        select: "_id clerkId name picture",
       });
 
     return question;
@@ -153,7 +161,7 @@ export async function upvoteQuestion(params: QuestionVoteParams) {
     revalidatePath(path);
 
     if (!question) {
-      throw new Error('Question not found');
+      throw new Error("Question not found");
     }
   } catch (error) {
     console.log(error);
@@ -186,7 +194,7 @@ export async function downvoteQuestion(params: QuestionVoteParams) {
     revalidatePath(path);
 
     if (!question) {
-      throw new Error('Question not found');
+      throw new Error("Question not found");
     }
   } catch (error) {
     console.log(error);
@@ -220,10 +228,10 @@ export async function editQuestion(params: EditQuestionParams) {
 
     const { questionId, title, content, path } = params;
 
-    const question = await Question.findById(questionId).populate('tags');
+    const question = await Question.findById(questionId).populate("tags");
 
     if (!question) {
-      throw new Error('Question not found');
+      throw new Error("Question not found");
     }
 
     question.title = title;
