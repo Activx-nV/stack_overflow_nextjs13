@@ -1,7 +1,8 @@
 'use client';
-import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
+
 import { Input } from '@/components/ui/input';
+import Image from 'next/image';
+import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { formUrlQuery, removeKeysFromQuery } from '@/lib/utils';
 
@@ -39,11 +40,13 @@ const LocalSearchbar = ({
 
         router.push(newUrl, { scroll: false });
       } else {
+        console.log(route, pathname);
         if (pathname === route) {
           const newUrl = removeKeysFromQuery({
             params: searchParams.toString(),
             keysToRemove: ['q'],
           });
+
           router.push(newUrl, { scroll: false });
         }
       }
@@ -59,7 +62,7 @@ const LocalSearchbar = ({
       {iconPosition === 'left' && (
         <Image
           src={imgSrc}
-          alt="Search icon"
+          alt="search icon"
           width={24}
           height={24}
           className="cursor-pointer"
@@ -77,7 +80,7 @@ const LocalSearchbar = ({
       {iconPosition === 'right' && (
         <Image
           src={imgSrc}
-          alt="Search icon"
+          alt="search icon"
           width={24}
           height={24}
           className="cursor-pointer"
