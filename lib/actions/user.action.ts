@@ -17,6 +17,8 @@ import { revalidatePath } from 'next/cache';
 import Question from '@/database/question.model';
 import Tag from '@/database/tag.model';
 import Answer from '@/database/answer.model';
+import { BadgeCriteriaType } from '@/types';
+import { assignBadges } from '../utils';
 
 export async function getUserById(params: any) {
   try {
@@ -52,7 +54,9 @@ export async function updateUser(params: UpdateUserParams) {
 
     const { clerkId, updateData, path } = params;
 
-    await User.findOneAndUpdate({ clerkId }, updateData, { new: true });
+    await User.findOneAndUpdate({ clerkId }, updateData, {
+      new: true,
+    });
 
     revalidatePath(path);
   } catch (error) {
@@ -73,15 +77,16 @@ export async function deleteUser(params: DeleteUserParams) {
       throw new Error('User not found');
     }
 
-    // Delete user from database questions, answers, comments, etc.
+    // Delete user from database
+    // and questions, answers, comments, etc.
 
-    // const userQuestionIds = await Question.find({
-    //   author: user._id,
-    // }).distinct('_id');
+    // get user question ids
+    // const userQuestionIds = await Question.find({ author: user._id}).distinct('_id');
 
+    // delete user questions
     await Question.deleteMany({ author: user._id });
 
-    // TODO: delete user answers, comments, etc
+    // TODO: delete user answers, comments, etc.
 
     const deletedUser = await User.findByIdAndDelete(user._id);
 
@@ -155,12 +160,14 @@ export async function toggleSaveQuestion(params: ToggleSaveQuestionParams) {
     const isQuestionSaved = user.saved.includes(questionId);
 
     if (isQuestionSaved) {
+      // remove question from saved
       await User.findByIdAndUpdate(
         userId,
         { $pull: { saved: questionId } },
         { new: true }
       );
     } else {
+      // add question to saved
       await User.findByIdAndUpdate(
         userId,
         { $addToSet: { saved: questionId } },
@@ -205,6 +212,7 @@ export async function getSavedQuestions(params: GetSavedQuestionsParams) {
       case 'most_answered':
         sortOptions = { answers: -1 };
         break;
+
       default:
         break;
     }
@@ -214,7 +222,7 @@ export async function getSavedQuestions(params: GetSavedQuestionsParams) {
       match: query,
       options: {
         sort: sortOptions,
-        skipAmount,
+        skip: skipAmount,
         limit: pageSize + 1,
       },
       populate: [
@@ -253,10 +261,73 @@ export async function getUserInfo(params: GetUserByIdParams) {
     const totalQuestions = await Question.countDocuments({ author: user._id });
     const totalAnswers = await Answer.countDocuments({ author: user._id });
 
+    const [questionUpvotes] = await Question.aggregate([
+      { $match: { author: user._id } },
+      {
+        $project: {
+          _id: 0,
+          upvotes: { $size: '$upvotes' },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalUpvotes: { $sum: '$upvotes' },
+        },
+      },
+    ]);
+
+    const [answerUpvotes] = await Answer.aggregate([
+      { $match: { author: user._id } },
+      {
+        $project: {
+          _id: 0,
+          upvotes: { $size: '$upvotes' },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalUpvotes: { $sum: '$upvotes' },
+        },
+      },
+    ]);
+
+    const [questionViews] = await Answer.aggregate([
+      { $match: { author: user._id } },
+      {
+        $group: {
+          _id: null,
+          totalViews: { $sum: '$views' },
+        },
+      },
+    ]);
+
+    const criteria = [
+      { type: 'QUESTION_COUNT' as BadgeCriteriaType, count: totalQuestions },
+      { type: 'ANSWER_COUNT' as BadgeCriteriaType, count: totalAnswers },
+      {
+        type: 'QUESTION_UPVOTES' as BadgeCriteriaType,
+        count: questionUpvotes?.totalUpvotes || 0,
+      },
+      {
+        type: 'ANSWER_UPVOTES' as BadgeCriteriaType,
+        count: answerUpvotes?.totalUpvotes || 0,
+      },
+      {
+        type: 'TOTAL_VIEWS' as BadgeCriteriaType,
+        count: questionViews?.totalViews || 0,
+      },
+    ];
+
+    const badgeCounts = assignBadges({ criteria });
+
     return {
       user,
       totalQuestions,
       totalAnswers,
+      badgeCounts,
+      reputation: user.reputation,
     };
   } catch (error) {
     console.log(error);
@@ -319,9 +390,6 @@ export async function getUserAnswers(params: GetUserStatsParams) {
 // export async function getAllUsers(params: GetAllUsersParams) {
 //   try {
 //     connectToDatabase();
-
-//     const users = await User.find({});
-
 //   } catch (error) {
 //     console.log(error);
 //     throw error;
