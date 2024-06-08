@@ -3,7 +3,7 @@
 import { HomePageFilters } from '@/constants/filters';
 import React, { useState } from 'react';
 import { Button } from '../ui/button';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { formUrlQuery } from '@/lib/utils';
 
 const HomeFilters = () => {
@@ -15,6 +15,7 @@ const HomeFilters = () => {
   const handleTypeClick = (item: string) => {
     if (active === item) {
       setActive('');
+
       const newUrl = formUrlQuery({
         params: searchParams.toString(),
         key: 'filter',
@@ -24,11 +25,13 @@ const HomeFilters = () => {
       router.push(newUrl, { scroll: false });
     } else {
       setActive(item);
+
       const newUrl = formUrlQuery({
         params: searchParams.toString(),
         key: 'filter',
         value: item.toLowerCase(),
       });
+
       router.push(newUrl, { scroll: false });
     }
   };
