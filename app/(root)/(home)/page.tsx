@@ -9,12 +9,11 @@ import { HomePageFilters } from '@/constants/filters';
 import {
   getQuestions,
   getRecommendedQuestions,
-  getRecommendedQuestions,
 } from '@/lib/actions/question.action';
 import { SearchParamsProps } from '@/types';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { auth } from '@clerk/nextjs';
+import { auth } from '@clerk/nextjs/server';
 
 export const metadata: Metadata = {
   title: 'Home | Dev Overflow',
