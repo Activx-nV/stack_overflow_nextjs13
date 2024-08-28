@@ -1,10 +1,10 @@
-import Link from 'next/link';
-import React from 'react';
-import RenderTag from '../shared/RenderTag';
-import Metric from '../shared/Metric';
-import { formatAndDivideNumber, getTimestamp } from '@/lib/utils';
-import { SignedIn } from '@clerk/nextjs';
-import EditDeleteAction from '../shared/EditDeleteAction';
+import Link from "next/link";
+import React from "react";
+import RenderTag from "../shared/RenderTag";
+import Metric from "../shared/Metric";
+import { formatAndDivideNumber, getTimestamp } from "@/lib/utils";
+import { SignedIn } from "@clerk/nextjs";
+import EditDeleteAction from "../shared/EditDeleteAction";
 
 interface QuestionProps {
   _id: string;
@@ -17,12 +17,13 @@ interface QuestionProps {
     _id: string;
     name: string;
     picture: string;
+    clerkId: string;
   };
   upvotes: string[];
   views: number;
   answers: Array<object>;
   createdAt: Date;
-  clerkId?: string;
+  clerkId?: string | null;
 }
 
 const QuestionCard = ({
